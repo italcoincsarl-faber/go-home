@@ -1,0 +1,6 @@
+{
+  "name": "GO HOME",
+  "description": "Plateforme immobilière de prestige et de confiance par Italco Inc Sarl à Kinshasa (RDC) - Agrément d'Agence Immobilière N° MIN.AT.UH/SG/DIR.HAB/019/AZ/002/2017. Générateur de campagnes marketing immobilières d'élite.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
