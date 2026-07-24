@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Property } from "../types";
-import { translations } from "../translations";
+import { Property } from "./types";
+import { translations } from "./translations";
 import { Bed, ShowerHead, Maximize2, Share2, Copy, Check } from "lucide-react";
 
 interface PropertyCardProps {
