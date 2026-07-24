@@ -28,17 +28,14 @@ export async function handler(event: any) {
       };
     }
 
-    // 3. Appel à l'IA Gemini avec l'outil de recherche Web (Google Search Grounding)
+// 3. Appel à l'IA Gemini avec prompt optimisé pour la rapidité
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Tu es l'assistant de recherche immobilière pour GO HOME PRO à Kinshasa. 
-Recherche sur le web des offres immobilières réelles et récentes à Kinshasa correspondant à cette demande : "${query}".
-Extrais et formate les résultats trouvés de manière claire (titre, commune/quartier, prix, description et lien si disponible).`,
+      contents: `Recherche rapidement 3 offres immobilières réelles à Kinshasa pour : "${query}". Donne une réponse courte : Titre, Quartier, Prix, Contact.`,
       config: {
-        tools: [{ googleSearch: {} }], // Activation de la recherche web en temps réel
+        tools: [{ googleSearch: {} }],
       },
     });
-
     // 4. Renvoi de la réponse au client
     return {
       statusCode: 200,
