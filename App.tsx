@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Property } from "./types";
-import PropertyCard from "./components/PropertyCard";
-import PropertyModal from "./components/PropertyModal";
-import LeadGenerator from "./components/LeadGenerator";
+import PropertyCard from "./PropertyCard";
+import PropertyModal from "./PropertyModal";
+import LeadGenerator from "./LeadGenerator";
 import { translations, getLocalizedProperty } from "./translations";
 import { 
   Building, 
