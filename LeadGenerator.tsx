@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { GeneratorParams, GeneratedLead } from "../types";
-import { translations } from "../translations";
+import { GeneratorParams, GeneratedLead } from "./types";
+import { translations } from "./translations";
 import { Sparkles, Copy, Info, CornerDownRight, RotateCcw, ClipboardCheck } from "lucide-react";
 
 interface LeadGeneratorProps {
