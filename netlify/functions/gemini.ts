@@ -28,9 +28,9 @@ export async function handler(event: any) {
       };
     }
 
-// 3. Appel à l'IA Gemini avec prompt optimisé pour la rapidité
+// 3. Appel à l'IA Gemini avec le bon identifiant de modèle
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: `Recherche rapidement 3 offres immobilières réelles à Kinshasa pour : "${query}". Donne une réponse courte : Titre, Quartier, Prix, Contact.`,
       config: {
         tools: [{ googleSearch: {} }],
