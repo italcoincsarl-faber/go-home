@@ -26,8 +26,8 @@ export async function handler(event: any) {
       throw new Error("Clé API GEMINI_API_KEY manquante sur Netlify");
     }
 
-    // Utilisation de l'alias d'API officiel 'gemini-1.5-flash-latest'
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // URL vers l'API v1 stable
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [
@@ -37,11 +37,6 @@ export async function handler(event: any) {
               text: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`
             }
           ]
-        }
-      ],
-      tools: [
-        {
-          google_search: {}
         }
       ]
     };
