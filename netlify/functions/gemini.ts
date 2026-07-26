@@ -27,7 +27,7 @@ export async function handler(event: any) {
 
     // Modèle stable 1.5-flash avec outil de recherche
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-latest",
+     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-002" });
       contents: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`,
       config: {
         tools: [{ googleSearch: {} }],
