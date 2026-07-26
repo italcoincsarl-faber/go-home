@@ -26,32 +26,56 @@ export async function handler(event: any) {
       throw new Error("Clé API GEMINI_API_KEY manquante sur Netlify");
     }
 
-    // URL vers l'API v1 stable
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // STEP 1: Recherche d'annonces réelles via l'API HTML DuckDuckGo (Ultra stable, pas de blocage)
+    const searchQuery = encodeURIComponent(`immobilier Kinshasa ${query}`);
+    const searchResponse = await fetch(`https://html.duckduckgo.com/html/?q=${searchQuery}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+    const htmlContext = await searchResponse.text();
+
+    // Nettoyage rapide du HTML pour extraire le texte utile
+    const cleanContext = htmlContext.replace(/<[^>]*>?/gm, ' ').substring(0, 4000);
+
+    // STEP 2: Traitement intelligent par Gemini (Appel v1 standard ultra-fiable)
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [
         {
           parts: [
             {
-              text: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`
+              text: `Tu es l'assistant de recherche immobilière pour l'application GO HOME PRO à Kinshasa.
+Voici les données extraites du web kinois pour la recherche "${query}" :
+---
+${cleanContext}
+---
+Analyse ces données et extrait 3 offres immobilières réelles ou pertinentes correspondant à la demande.
+Si les données web sont limitées, utilise ta connaissance du marché immobilier de Kinshasa (Gombe, Ngaliema, Limete, etc.) pour formuler 3 propositions très réalistes au format court et professionnel.
+
+Format exigé pour chaque offre :
+- Titre
+- Quartier / Commune
+- Prix (en USD ou FC)
+- Contact / Source`
             }
           ]
         }
       ]
     };
 
-    const response = await fetch(url, {
+    const aiResponse = await fetch(geminiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    const data = await aiResponse.json();
 
-    if (!response.ok) {
-      console.error("Détails Erreur Google API:", JSON.stringify(data));
-      throw new Error(data.error?.message || "Erreur lors de la requête Google API");
+    if (!aiResponse.ok) {
+      console.error("Détails Erreur Gemini:", JSON.stringify(data));
+      throw new Error(data.error?.message || "Erreur lors du traitement IA");
     }
 
     const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucun résultat trouvé.";
