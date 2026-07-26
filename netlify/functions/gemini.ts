@@ -1,7 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function handler(event: any) {
   if (event.httpMethod === "OPTIONS") {
     return {
@@ -25,14 +21,45 @@ export async function handler(event: any) {
       };
     }
 
-    // Utilisation de l'alias 'gemini-flash' qui pointe vers la version stable en cours
-    const response = await ai.models.generateContent({
-      model: "gemini-flash",
-      contents: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Clé API GEMINI_API_KEY manquante sur Netlify");
+    }
+
+    // Chiamata REST diretta all'API Gemini v1beta con Google Search Grounding
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            {
+              text: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`
+            }
+          ]
+        }
+      ],
+      tools: [
+        {
+          google_search: {}
+        }
+      ]
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Détails Erreur Google API:", JSON.stringify(data));
+      throw new Error(data.error?.message || "Erreur lors de la requête Google API");
+    }
+
+    const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucun résultat trouvé.";
 
     return {
       statusCode: 200,
@@ -42,11 +69,11 @@ export async function handler(event: any) {
       },
       body: JSON.stringify({
         success: true,
-        result: response.text,
+        result: textResult,
       }),
     };
   } catch (error: any) {
-    console.error("Erreur Gemini:", error);
+    console.error("Erreur Netlify Function:", error.message);
     return {
       statusCode: 500,
       headers: {
