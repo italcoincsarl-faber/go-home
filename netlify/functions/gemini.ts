@@ -26,8 +26,8 @@ export async function handler(event: any) {
       throw new Error("Clé API GEMINI_API_KEY manquante sur Netlify");
     }
 
-    // Chiamata REST diretta all'API Gemini v1beta con Google Search Grounding
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Utilisation de l'alias d'API officiel 'gemini-1.5-flash-latest'
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [
