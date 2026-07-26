@@ -1,10 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Initialisation de l'API avec la clé d'environnement
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function handler(event: any) {
-  // 1. Gestion des requêtes CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -17,27 +15,25 @@ export async function handler(event: any) {
   }
 
   try {
-    // 2. Récupération de la recherche saisie par l'utilisateur
     const { query } = JSON.parse(event.body || "{}");
 
     if (!query) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ success: false, error: "Requête de recherche manquante" }),
+        body: JSON.stringify({ success: false, error: "Requête manquante" }),
       };
     }
 
-    // 3. Appel à l'IA Gemini avec un modèle stable et reconnu
+    // Modèle stable 1.5-flash avec outil de recherche
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
-      contents: `Recherche rapidement 3 offres immobilières réelles à Kinshasa pour : "${query}". Donne une réponse courte : Titre, Quartier, Prix, Contact.`,
+      contents: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`,
       config: {
         tools: [{ googleSearch: {} }],
       },
     });
 
-    // 4. Renvoi de la réponse au client
     return {
       statusCode: 200,
       headers: {
@@ -50,7 +46,7 @@ export async function handler(event: any) {
       }),
     };
   } catch (error: any) {
-    console.error("Erreur Netlify Function Gemini:", error);
+    console.error("Erreur Gemini:", error);
     return {
       statusCode: 500,
       headers: {
