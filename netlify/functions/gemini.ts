@@ -25,9 +25,9 @@ export async function handler(event: any) {
       };
     }
 
-    // Chiamata corretta con il nuovo SDK @google/genai
+    // Utilisation de l'alias 'gemini-flash' qui pointe vers la version stable en cours
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-flash",
       contents: `Recherche 3 offres immobilières réelles à Kinshasa pour : "${query}". Format court : Titre, Quartier, Prix, Contact.`,
       config: {
         tools: [{ googleSearch: {} }],
