@@ -1,10 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Initialisation de l'API avec la clé d'environnement définie dans Netlify
+// Initialisation de l'API avec la clé d'environnement
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function handler(event: any) {
-  // 1. Gestion des requêtes CORS (pour autoriser les appels depuis votre site)
+  // 1. Gestion des requêtes CORS
   if (event.httpMethod === "OPTIONS") {
     return {
       statusCode: 200,
@@ -28,7 +28,7 @@ export async function handler(event: any) {
       };
     }
 
-// 3. Appel à l'IA Gemini avec le bon identifiant de modèle
+    // 3. Appel à l'IA Gemini avec un modèle stable et reconnu
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
       contents: `Recherche rapidement 3 offres immobilières réelles à Kinshasa pour : "${query}". Donne une réponse courte : Titre, Quartier, Prix, Contact.`,
@@ -36,6 +36,7 @@ export async function handler(event: any) {
         tools: [{ googleSearch: {} }],
       },
     });
+
     // 4. Renvoi de la réponse au client
     return {
       statusCode: 200,
@@ -58,7 +59,7 @@ export async function handler(event: any) {
       },
       body: JSON.stringify({
         success: false,
-        error: error.message || "Erreur lors de l'analyse du serveur web.",
+        error: error.message || "Erreur interne",
       }),
     };
   }
