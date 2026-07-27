@@ -88,12 +88,11 @@ const mockProperties = [
   },
 ];
 
-// ===== FILTRAGE SIMPLIFIÉ (renvoie toujours des biens) =====
+// ===== FILTRAGE SIMPLIFIÉ =====
 function filterProperties(query: string) {
   const lower = query.toLowerCase();
   let filtered = mockProperties;
 
-  // Filtrage par quartier
   if (lower.includes('gombe')) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('gombe'));
   } else if (lower.includes('ngaliema')) {
@@ -104,7 +103,6 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('nsele') || p.quartier.toLowerCase().includes('maluku'));
   }
 
-  // Filtrage par type de bien
   if (lower.includes('villa') || lower.includes('maison')) {
     filtered = filtered.filter(p => p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('maison'));
   } else if (lower.includes('appartement') || lower.includes('studio') || lower.includes('loft')) {
@@ -113,7 +111,6 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.category.includes('Foncier') || p.title.toLowerCase().includes('terrain'));
   }
 
-  // Filtrage par budget
   const budgetMatch = lower.match(/(\d+)\s*(usd|euro|€|\$)?/);
   if (budgetMatch) {
     const budget = parseInt(budgetMatch[1]);
@@ -125,18 +122,15 @@ function filterProperties(query: string) {
     }
   }
 
-  // Si aucun résultat, on renvoie les 3 premiers biens (pour ne jamais avoir vide)
   if (filtered.length === 0) {
     filtered = mockProperties.slice(0, 3);
   }
 
-  // On limite à 5 résultats max
   return filtered.slice(0, 5);
 }
 
 // ===== FONCTION PRINCIPALE =====
 export const handler: Handler = async (event) => {
-  // CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -161,7 +155,7 @@ export const handler: Handler = async (event) => {
     const userQuery = query?.trim() || 'deux chambres gombe';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // === 1. Générer l'analyse (avec ou sans Gemini) ===
+    // Génération de l'analyse (fallback + Gemini)
     let aiSummary = `🔍 Analyse pour "${userQuery}" : Nous avons identifié plusieurs opportunités correspondant à votre recherche. Contactez nos bureaux pour une visite gratuite.`;
 
     if (apiKey) {
@@ -185,16 +179,14 @@ export const handler: Handler = async (event) => {
         }
       } catch (e) {
         console.error('❌ Erreur appel Gemini:', e);
-        // On garde le fallback.
+        // On garde le fallback
       }
     } else {
       console.warn('⚠️ Aucune clé API Gemini trouvée, utilisation du fallback.');
     }
 
-    // === 2. Filtrer les biens ===
     const filteredProps = filterProperties(userQuery);
 
-    // === 3. Construire la réponse (TOUS LES CHAMPS SONT REMPLIS) ===
     const responsePayload = {
       success: true,
       data: {
@@ -218,7 +210,6 @@ export const handler: Handler = async (event) => {
       },
     };
 
-    // === 4. Retourner la réponse ===
     return {
       statusCode: 200,
       headers: {
@@ -229,7 +220,6 @@ export const handler: Handler = async (event) => {
     };
   } catch (error) {
     console.error('💥 Erreur générale:', error);
-    // En cas d'erreur, on renvoie quand même une structure valide avec des données par défaut
     return {
       statusCode: 200,
       headers: {
