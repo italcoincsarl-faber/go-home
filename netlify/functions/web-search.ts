@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 
-// Base de données simulée de biens immobiliers (représentatifs du marché)
+// Base de données simulée de biens immobiliers
 const mockProperties = [
   {
     id: 'prop-1',
@@ -88,12 +88,11 @@ const mockProperties = [
   },
 ];
 
-// Fonction pour filtrer les biens en fonction de la requête
-function filterProperties(query: string) {
+// Fonction de filtrage dynamique
+function filterProperties(query: string): typeof mockProperties {
   const lower = query.toLowerCase();
   let filtered = mockProperties;
 
-  // Filtrage par quartier
   if (lower.includes('gombe')) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('gombe'));
   } else if (lower.includes('ngaliema')) {
@@ -104,7 +103,6 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('nsele') || p.quartier.toLowerCase().includes('maluku'));
   }
 
-  // Filtrage par type de bien
   if (lower.includes('villa') || lower.includes('maison')) {
     filtered = filtered.filter(p => p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('maison'));
   } else if (lower.includes('appartement') || lower.includes('studio') || lower.includes('loft')) {
@@ -113,7 +111,6 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.category.includes('Foncier') || p.title.toLowerCase().includes('terrain'));
   }
 
-  // Filtrage par budget (si mentionné)
   const budgetMatch = lower.match(/(\d+)\s*(usd|euro|€|\$)?/);
   if (budgetMatch) {
     const budget = parseInt(budgetMatch[1]);
@@ -125,13 +122,10 @@ function filterProperties(query: string) {
     }
   }
 
-  // Si aucun résultat, on renvoie tous les biens (au moins un résultat)
   if (filtered.length === 0) {
     filtered = mockProperties.slice(0, 2);
   }
 
-  // On calcule un matchScore fictif pour chaque bien (déjà présent)
-  // On retourne les 5 premiers maximum
   return filtered.slice(0, 5);
 }
 
@@ -161,7 +155,6 @@ export const handler: Handler = async (event) => {
     const userQuery = query?.trim() || 'deux chambres gombe';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // 1. Générer une analyse synthétique (avec ou sans Gemini)
     let aiSummary = `Analyse pour "${userQuery}" : Nous avons identifié plusieurs opportunités correspondant à votre recherche. Contactez nos bureaux pour une visite gratuite.`;
 
     if (apiKey) {
@@ -186,10 +179,8 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // 2. Filtrer les biens simulés en fonction de la requête
     const filteredProps = filterProperties(userQuery);
 
-    // 3. Construire les données pour le frontend
     const responsePayload = {
       success: true,
       data: {
@@ -197,7 +188,7 @@ export const handler: Handler = async (event) => {
         estimatedWebPriceRange: '1 200 $ - 2 500 $ / mois (selon standing à La Gombe)',
         securityAdvice: 'Tous nos biens sont certifiés légalement par Italco Sarl. Bail notarié & titre foncier vérifié.',
         matchingCategory: filteredProps.length > 0 ? filteredProps[0].category : 'Résidentiel Premium',
-        localMatchIds: ['prop-gombe-penthouse', 'prop-ngaliema-villa'], // IDs de biens à afficher en suggestion
+        localMatchIds: ['prop-gombe-penthouse', 'prop-ngaliema-villa'],
         scrapedOpportunities: filteredProps.map(prop => ({
           id: prop.id,
           source: 'Portefeuille GO HOME',
@@ -240,9 +231,6 @@ export const handler: Handler = async (event) => {
           scrapedOpportunities: [],
         },
       }),
-    };
-  }
-};
     };
   }
 };
