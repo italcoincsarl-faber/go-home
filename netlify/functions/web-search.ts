@@ -1,7 +1,142 @@
 import { Handler } from '@netlify/functions';
 
+// Base de données simulée de biens immobiliers (représentatifs du marché)
+const mockProperties = [
+  {
+    id: 'prop-1',
+    title: 'Appartement 3 chambres – Gombe (Golf)',
+    quartier: 'Gombe (Golf)',
+    price: '$3 200 / mois',
+    description: 'Bel appartement au 5e étage avec vue dégagée, proche des ambassades.',
+    category: 'Résidentiel Premium',
+    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '3', baths: '2', space: '150 m²' },
+    contactStatus: 'Vérifié par Italco',
+    matchScore: 95,
+  },
+  {
+    id: 'prop-2',
+    title: 'Villa 4 chambres – Ngaliema (Ma Campagne)',
+    quartier: 'Ngaliema (Ma Campagne)',
+    price: '$4 500 / mois',
+    description: 'Villa de standing avec piscine, jardin paysager et système de sécurité 24h.',
+    category: 'Résidentiel Premium',
+    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '4', baths: '3', space: '220 m²' },
+    contactStatus: 'Disponible pour Visite',
+    matchScore: 88,
+  },
+  {
+    id: 'prop-3',
+    title: 'Studio moderne – Gombe (Socimat)',
+    quartier: 'Gombe (Socimat)',
+    price: '$1 800 / mois',
+    description: 'Studio entièrement rénové, idéal pour cadre expatrié, à 5 min du centre.',
+    category: 'Locatif Haut de Gamme',
+    imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '1', baths: '1', space: '55 m²' },
+    contactStatus: 'Vérifié par Italco',
+    matchScore: 90,
+  },
+  {
+    id: 'prop-4',
+    title: 'Maison 5 chambres – Limete (Industriel)',
+    quartier: 'Limete (Industriel)',
+    price: '$2 800 / mois',
+    description: 'Grande maison à usage mixte (habitation/bureau), spacieuse et sécurisée.',
+    category: 'Mixte Commerce/Logis',
+    imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '5', baths: '4', space: '300 m²' },
+    contactStatus: 'En Attente de Titre',
+    matchScore: 82,
+  },
+  {
+    id: 'prop-5',
+    title: 'Terrain 2 ha – Nsele (Est)',
+    quartier: 'Nsele (Est)',
+    price: '$250 000 (acquisition)',
+    description: 'Terrain plat de 2 hectares, idéal pour projet résidentiel ou agro-industriel.',
+    category: 'Placement Foncier',
+    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: 'N/A', baths: 'N/A', space: '20 000 m²' },
+    contactStatus: 'Vérifié par Italco',
+    matchScore: 75,
+  },
+  {
+    id: 'prop-6',
+    title: 'Loft 2 chambres – Limete (Créatif)',
+    quartier: 'Limete (Industriel)',
+    price: '$2 200 / mois',
+    description: 'Loft moderne avec hauteur sous plafond de 5 m, parfait pour showroom ou atelier.',
+    category: 'Mixte Commerce/Logis',
+    imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '2', baths: '1', space: '180 m²' },
+    contactStatus: 'Disponible pour Visite',
+    matchScore: 85,
+  },
+  {
+    id: 'prop-7',
+    title: 'Duplex de prestige – Gombe (Centre)',
+    quartier: 'Gombe (Centre)',
+    price: '$6 500 / mois',
+    description: 'Magnifique duplex avec terrasse panoramique sur le fleuve, finitions haut de gamme.',
+    category: 'Résidentiel Premium',
+    imageUrl: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600',
+    specs: { beds: '4', baths: '3', space: '280 m²' },
+    contactStatus: 'Vérifié par Italco',
+    matchScore: 98,
+  },
+];
+
+// Fonction pour filtrer les biens en fonction de la requête
+function filterProperties(query: string) {
+  const lower = query.toLowerCase();
+  let filtered = mockProperties;
+
+  // Filtrage par quartier
+  if (lower.includes('gombe')) {
+    filtered = filtered.filter(p => p.quartier.toLowerCase().includes('gombe'));
+  } else if (lower.includes('ngaliema')) {
+    filtered = filtered.filter(p => p.quartier.toLowerCase().includes('ngaliema'));
+  } else if (lower.includes('limete')) {
+    filtered = filtered.filter(p => p.quartier.toLowerCase().includes('limete'));
+  } else if (lower.includes('nsele') || lower.includes('maluku')) {
+    filtered = filtered.filter(p => p.quartier.toLowerCase().includes('nsele') || p.quartier.toLowerCase().includes('maluku'));
+  }
+
+  // Filtrage par type de bien
+  if (lower.includes('villa') || lower.includes('maison')) {
+    filtered = filtered.filter(p => p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('maison'));
+  } else if (lower.includes('appartement') || lower.includes('studio') || lower.includes('loft')) {
+    filtered = filtered.filter(p => p.title.toLowerCase().includes('appartement') || p.title.toLowerCase().includes('studio') || p.title.toLowerCase().includes('loft'));
+  } else if (lower.includes('terrain') || lower.includes('foncier')) {
+    filtered = filtered.filter(p => p.category.includes('Foncier') || p.title.toLowerCase().includes('terrain'));
+  }
+
+  // Filtrage par budget (si mentionné)
+  const budgetMatch = lower.match(/(\d+)\s*(usd|euro|€|\$)?/);
+  if (budgetMatch) {
+    const budget = parseInt(budgetMatch[1]);
+    if (!isNaN(budget)) {
+      filtered = filtered.filter(p => {
+        const priceNum = parseInt(p.price.replace(/[^0-9]/g, ''));
+        return !isNaN(priceNum) && priceNum <= budget;
+      });
+    }
+  }
+
+  // Si aucun résultat, on renvoie tous les biens (au moins un résultat)
+  if (filtered.length === 0) {
+    filtered = mockProperties.slice(0, 2);
+  }
+
+  // On calcule un matchScore fictif pour chaque bien (déjà présent)
+  // On retourne les 5 premiers maximum
+  return filtered.slice(0, 5);
+}
+
 export const handler: Handler = async (event) => {
-  // Gestion CORS pour les requêtes OPTIONS (préflight)
+  // Gestion CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -13,7 +148,6 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  // Seulement les requêtes POST sont autorisées
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -23,57 +157,59 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    // Récupérer la requête et la langue depuis le body
     const { query, lang } = JSON.parse(event.body || '{}');
-    const userQuery = query?.trim() || 'recherche immobilière à Kinshasa';
+    const userQuery = query?.trim() || 'deux chambres gombe';
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    // Construire une réponse structurée pour le frontend
-    // (peut être améliorée avec un vrai scraping ou une API externe)
+    // 1. Générer une analyse synthétique (avec ou sans Gemini)
+    let aiSummary = `Analyse pour "${userQuery}" : Nous avons identifié plusieurs opportunités correspondant à votre recherche. Contactez nos bureaux pour une visite gratuite.`;
+
+    if (apiKey) {
+      try {
+        const fullPrompt = `
+          Tu es l'expert immobilier de GO HOME PRO à Kinshasa.
+          Analyse la recherche : "${userQuery}".
+          Rédige un résumé très synthétique (max 3 phrases) sur les prix moyens, la sécurité juridique et la disponibilité à Kinshasa (Gombe, Ngaliema, Limete).
+        `;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+        });
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          aiSummary = data.candidates[0].content.parts[0].text;
+        }
+      } catch (e) {
+        console.error('Erreur API Gemini:', e);
+      }
+    }
+
+    // 2. Filtrer les biens simulés en fonction de la requête
+    const filteredProps = filterProperties(userQuery);
+
+    // 3. Construire les données pour le frontend
     const responsePayload = {
       success: true,
       data: {
-        // Résumé général (peut être généré par Gemini si tu veux)
-        aiSummary: `Nous avons analysé votre recherche pour : "${userQuery}". Des opportunités sont disponibles dans les quartiers de Gombe, Ngaliema et Limete. Contactez nos bureaux pour une visite gratuite.`,
-
-        // Gamme de prix estimée (statique ou dynamique)
-        estimatedWebPriceRange: '1 200 $ - 2 500 $ / mois (selon standing)',
-
-        // Message sur la sécurité juridique
+        aiSummary,
+        estimatedWebPriceRange: '1 200 $ - 2 500 $ / mois (selon standing à La Gombe)',
         securityAdvice: 'Tous nos biens sont certifiés légalement par Italco Sarl. Bail notarié & titre foncier vérifié.',
-
-        // Catégorie suggérée pour le filtrage du catalogue
-        matchingCategory: 'Résidentiel Premium',
-
-        // IDs des propriétés du catalogue à mettre en avant (correspondant à la recherche)
-        localMatchIds: ['prop-gombe-penthouse', 'prop-ngaliema-villa'],
-
-        // Liste d'opportunités "scrappées" (simulées ici)
-        scrapedOpportunities: [
-          {
-            id: 'scraped-1',
-            source: 'Annonce en ligne',
-            title: 'Appartement 3 chambres à Gombe',
-            price: '$3 200 / mois',
-            quartier: 'Gombe (Golf)',
-            description: 'Bien récent avec vue imprenable sur la ville.',
-            matchScore: 92,
-            contactStatus: 'Vérifié par Italco',
-            imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
-            specs: { beds: '3', baths: '2', space: '150 m²' },
-          },
-          {
-            id: 'scraped-2',
-            source: 'Portefeuille GO HOME',
-            title: 'Villa 4 chambres à Ngaliema',
-            price: '$4 500 / mois',
-            quartier: 'Ngaliema (Ma Campagne)',
-            description: 'Villa de standing avec piscine et jardin paysager.',
-            matchScore: 88,
-            contactStatus: 'Disponible pour Visite',
-            imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600',
-            specs: { beds: '4', baths: '3', space: '220 m²' },
-          },
-        ],
+        matchingCategory: filteredProps.length > 0 ? filteredProps[0].category : 'Résidentiel Premium',
+        localMatchIds: ['prop-gombe-penthouse', 'prop-ngaliema-villa'], // IDs de biens à afficher en suggestion
+        scrapedOpportunities: filteredProps.map(prop => ({
+          id: prop.id,
+          source: 'Portefeuille GO HOME',
+          title: prop.title,
+          price: prop.price,
+          quartier: prop.quartier,
+          description: prop.description,
+          matchScore: prop.matchScore,
+          contactStatus: prop.contactStatus,
+          imageUrl: prop.imageUrl,
+          specs: prop.specs,
+        })),
       },
     };
 
@@ -86,8 +222,7 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify(responsePayload),
     };
   } catch (error) {
-    console.error('Erreur dans web-search :', error);
-    // En cas d'erreur, renvoyer une réponse minimale pour ne pas bloquer l'UI
+    console.error('Erreur générale:', error);
     return {
       statusCode: 200,
       headers: {
@@ -105,6 +240,9 @@ export const handler: Handler = async (event) => {
           scrapedOpportunities: [],
         },
       }),
+    };
+  }
+};
     };
   }
 };
