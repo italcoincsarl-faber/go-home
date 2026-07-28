@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 
-// ===== BASE DE DONNÉES SIMULÉE (7 biens types) =====
+// ===== BASE DE DONNÉES SIMULÉE AVEC IMAGES =====
 const mockProperties = [
   {
     id: 'prop-1',
@@ -88,11 +88,12 @@ const mockProperties = [
   },
 ];
 
-// ===== FILTRAGE SIMPLIFIÉ =====
+// ===== FILTRAGE AVEC BONUS (pour toujours avoir des résultats) =====
 function filterProperties(query: string) {
   const lower = query.toLowerCase();
-  let filtered = mockProperties;
+  let filtered = [...mockProperties];
 
+  // Filtrage par quartier (si mentionné)
   if (lower.includes('gombe')) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('gombe'));
   } else if (lower.includes('ngaliema')) {
@@ -103,6 +104,7 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.quartier.toLowerCase().includes('nsele') || p.quartier.toLowerCase().includes('maluku'));
   }
 
+  // Filtrage par type de bien
   if (lower.includes('villa') || lower.includes('maison')) {
     filtered = filtered.filter(p => p.title.toLowerCase().includes('villa') || p.title.toLowerCase().includes('maison'));
   } else if (lower.includes('appartement') || lower.includes('studio') || lower.includes('loft')) {
@@ -111,6 +113,7 @@ function filterProperties(query: string) {
     filtered = filtered.filter(p => p.category.includes('Foncier') || p.title.toLowerCase().includes('terrain'));
   }
 
+  // Filtrage par budget
   const budgetMatch = lower.match(/(\d+)\s*(usd|euro|€|\$)?/);
   if (budgetMatch) {
     const budget = parseInt(budgetMatch[1]);
@@ -122,6 +125,7 @@ function filterProperties(query: string) {
     }
   }
 
+  // Si aucun résultat, on renvoie 3 biens par défaut
   if (filtered.length === 0) {
     filtered = mockProperties.slice(0, 3);
   }
@@ -155,8 +159,8 @@ export const handler: Handler = async (event) => {
     const userQuery = query?.trim() || 'deux chambres gombe';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Génération de l'analyse (fallback + Gemini)
-    let aiSummary = `🔍 Analyse pour "${userQuery}" : Nous avons identifié plusieurs opportunités correspondant à votre recherche. Contactez nos bureaux pour une visite gratuite.`;
+    // === 1. Analyse avec Gemini ou fallback ===
+    let aiSummary = `🔍 Analyse pour "${userQuery}" : Plusieurs opportunités correspondant à votre recherche sont disponibles à Kinshasa. Contactez nos bureaux pour une visite gratuite.`;
 
     if (apiKey) {
       try {
@@ -175,26 +179,37 @@ export const handler: Handler = async (event) => {
         if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
           aiSummary = data.candidates[0].content.parts[0].text;
         } else {
-          console.warn('⚠️ Réponse Gemini non valide, utilisation du fallback.');
+          console.warn('⚠️ Réponse Gemini non valide, fallback utilisé.');
         }
       } catch (e) {
         console.error('❌ Erreur appel Gemini:', e);
-        // On garde le fallback
       }
     } else {
-      console.warn('⚠️ Aucune clé API Gemini trouvée, utilisation du fallback.');
+      console.warn('⚠️ Aucune clé API Gemini trouvée, fallback utilisé.');
     }
 
     const filteredProps = filterProperties(userQuery);
 
+    // === 2. Construction de la réponse (TOUS les champs remplis) ===
     const responsePayload = {
       success: true,
       data: {
-        aiSummary: aiSummary || 'Analyse disponible. Contactez nos bureaux pour plus d\'informations.',
+        // Analyse textuelle
+        aiSummary: aiSummary || `📊 Analyse pour "${userQuery}" : Nous avons identifié ${filteredProps.length} opportunités correspondant à votre recherche. Contactez nos bureaux pour une visite gratuite.`,
+        
+        // Prix estimé
         estimatedWebPriceRange: '1 200 $ - 2 500 $ / mois (selon standing à La Gombe)',
-        securityAdvice: 'Tous nos biens sont certifiés légalement par Italco Sarl. Bail notarié & titre foncier vérifié.',
+        
+        // Garanties légales
+        securityAdvice: '✅ Tous nos biens sont certifiés légalement par Italco Sarl. Bail notarié & titre foncier vérifié.',
+        
+        // Catégorie suggérée (pour le re-filtrage)
         matchingCategory: filteredProps.length > 0 ? filteredProps[0].category : 'Résidentiel Premium',
-        localMatchIds: ['prop-gombe-penthouse', 'prop-ngaliema-villa'],
+        
+        // IDs des biens à suggérer (pour affichage dans la section "BIEN ANALOGUE")
+        localMatchIds: filteredProps.map(p => p.id).slice(0, 2),
+        
+        // Liste des opportunités
         scrapedOpportunities: filteredProps.map(prop => ({
           id: prop.id,
           source: 'Portefeuille GO HOME',
@@ -204,7 +219,7 @@ export const handler: Handler = async (event) => {
           description: prop.description,
           matchScore: prop.matchScore,
           contactStatus: prop.contactStatus,
-          imageUrl: prop.imageUrl,
+          imageUrl: prop.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
           specs: prop.specs,
         })),
       },
@@ -229,9 +244,9 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify({
         success: true,
         data: {
-          aiSummary: 'Analyse disponible auprès de la direction commerciale. Contactez nos bureaux.',
+          aiSummary: 'Analyse disponible auprès de la direction commerciale.',
           estimatedWebPriceRange: 'Sur demande',
-          securityAdvice: 'Conforme droit congolais & Italco Sarl',
+          securityAdvice: '✅ Conforme droit congolais & Italco Sarl',
           matchingCategory: 'Résidentiel',
           localMatchIds: [],
           scrapedOpportunities: mockProperties.slice(0, 3).map(prop => ({
@@ -243,7 +258,7 @@ export const handler: Handler = async (event) => {
             description: prop.description,
             matchScore: prop.matchScore,
             contactStatus: prop.contactStatus,
-            imageUrl: prop.imageUrl,
+            imageUrl: prop.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=600',
             specs: prop.specs,
           })),
         },
