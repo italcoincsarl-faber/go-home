@@ -3,12 +3,30 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Redirection spécifique pour la recherche web (vers web-search.ts)
 [[redirects]]
-  from = "/api/search"
+  from = "/api/web-search"
+  to = "/.netlify/functions/web-search"
+  status = 200
+
+# Redirection spécifique pour le générateur de leads (vers gemini.ts)
+[[redirects]]
+  from = "/api/leads/generate"
   to = "/.netlify/functions/gemini"
   status = 200
 
+# Redirection spécifique pour les propriétés (si vous avez un fichier dédié)
+# Pour l'instant, on le laisse pointer vers gemini, mais il faudra créer un fichier properties.ts
 [[redirects]]
-  from = "/api/*"
+  from = "/api/properties"
   to = "/.netlify/functions/gemini"
   status = 200
+
+# Redirection spécifique pour le contact (si vous avez un fichier dédié)
+# Pour l'instant, on le laisse pointer vers gemini
+[[redirects]]
+  from = "/api/contact"
+  to = "/.netlify/functions/gemini"
+  status = 200
+
+# IMPORTANT : Supprimer la règle catch-all "/api/*" qui détournait tout !
